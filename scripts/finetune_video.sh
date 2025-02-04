@@ -1,25 +1,27 @@
 #!/bin/bash
 
 # You can use 2B instead of 7B
-# MODEL_NAME="Qwen/Qwen2-VL-7B-Instruct"
+MODEL_NAME="Qwen/Qwen2-VL-7B-Instruct"
 # MODEL_NAME="Qwen/Qwen2-VL-2B-Instruct"
-MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
+# MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
 # MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 export PYTHONPATH=src:$PYTHONPATH
 
-GLOBAL_BATCH_SIZE=128
-BATCH_PER_DEVICE=4
-NUM_DEVICES=8
-GRAD_ACCUM_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_PER_DEVICE * NUM_DEVICES)))
-
 
 
 deepspeed src/training/train.py \
+    --lora_enable True \
+    --use_dora False \
+    --lora_namespan_exclude "['lm_head', 'embed_tokens']" \
+    --lora_rank 64 \
+    --lora_alpha 64 \
+    --lora_dropout 0.05 \
+    --num_lora_modules -1 \
     --deepspeed scripts/zero3_offload.json \
     --model_id $MODEL_NAME \
-    --data_path /path/to/your/training/data.json \
-    --image_folder /path/to/your/image/folder \
+    --data_path /home/ubuntu/akshay/data/train.json \
+    --image_folder /home/ubuntu/akshay/data/driving_videos/jan_29_2025 \
     --remove_unused_columns False \
     --freeze_vision_tower False \
     --freeze_llm False \
@@ -27,10 +29,10 @@ deepspeed src/training/train.py \
     --bf16 True \
     --fp16 False \
     --disable_flash_attn2 False \
-    --output_dir output/test_train \
-    --num_train_epochs 1 \
-    --per_device_train_batch_size $BATCH_PER_DEVICE \
-    --gradient_accumulation_steps $GRAD_ACCUM_STEPS \
+    --output_dir /home/ubuntu/akshay/qwen2-results \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 2 \
+    --gradient_accumulation_steps 8 \
     --max_pixels $((360 * 420)) \
     --fps 1.0 \
     --learning_rate 1e-5 \
@@ -45,6 +47,7 @@ deepspeed src/training/train.py \
     --report_to tensorboard \
     --lazy_preprocess True \
     --save_strategy "steps" \
-    --save_steps 1 \
-    --save_total_limit 10 \
-    --dataloader_num_workers 4
+    --save_steps 200 \
+    --save_total_limit 1 \
+    --dataloader_num_workers 4 \
+    --push_to_hub True

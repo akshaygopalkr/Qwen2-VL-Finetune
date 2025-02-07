@@ -1,4 +1,5 @@
 import os
+os.environ["WANDB_PROJECT"] = "NomadicML-vlm"
 import torch
 from peft import LoraConfig, get_peft_model
 import ast
@@ -186,6 +187,7 @@ def train():
 
     data_module = make_supervised_data_module(processor=processor,
                                               data_args=data_args)
+    print("Dataset length: ", len(data_module['train_dataset']))
 
     trainer = QwenTrainer(
         model=model,
@@ -198,25 +200,28 @@ def train():
     else:
         trainer.train()
 
+
+    # Save state and model
     trainer.save_state()
+    trainer.push_to_hub()
 
     model.config.use_cache = True
     
-    if training_args.lora_enable:
-        state_dict = get_peft_state_maybe_zero_3(
-            model.named_parameters(), training_args.lora_bias
-        )
+    # if training_args.lora_enable:
+    #     state_dict = get_peft_state_maybe_zero_3(
+    #         model.named_parameters(), training_args.lora_bias
+    #     )
 
-        non_lora_state_dict = get_peft_state_non_lora_maybe_zero_3(
-            model.named_parameters(), require_grad_only=False
-        )
+    #     non_lora_state_dict = get_peft_state_non_lora_maybe_zero_3(
+    #         model.named_parameters(), require_grad_only=False
+    #     )
 
-        if local_rank == 0 or local_rank == -1:
-            model.config.save_pretrained(training_args.output_dir)
-            model.save_pretrained(training_args.output_dir, state_dict=state_dict)
-            torch.save(non_lora_state_dict, os.path.join(training_args.output_dir, "non_lora_state_dict.bin"))
-    else:
-        safe_save_model_for_hf_trainer(trainer, output_dir=training_args.output_dir)
+    #     if local_rank == 0 or local_rank == -1:
+    #         model.config.save_pretrained(training_args.output_dir)
+    #         model.save_pretrained(training_args.output_dir, state_dict=state_dict)
+    #         torch.save(non_lora_state_dict, os.path.join(training_args.output_dir, "non_lora_state_dict.bin"))
+    # else:
+    #     safe_save_model_for_hf_trainer(trainer, output_dir=training_args.output_dir)
 
 
 

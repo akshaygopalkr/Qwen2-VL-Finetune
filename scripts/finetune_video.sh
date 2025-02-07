@@ -18,24 +18,24 @@ deepspeed src/training/train.py \
     --lora_alpha 64 \
     --lora_dropout 0.05 \
     --num_lora_modules -1 \
-    --deepspeed scripts/zero3_offload.json \
+    --deepspeed scripts/zero3.json \
     --model_id $MODEL_NAME \
     --data_path /home/ubuntu/akshay/data/train.json \
     --image_folder /home/ubuntu/akshay/data/driving_videos/jan_29_2025 \
     --remove_unused_columns False \
     --freeze_vision_tower False \
-    --freeze_llm False \
+    --freeze_llm True \
     --tune_merger True \
     --bf16 True \
     --fp16 False \
     --disable_flash_attn2 False \
     --output_dir /home/ubuntu/akshay/qwen2-results \
-    --num_train_epochs 3 \
+    --num_train_epochs 15 \
     --per_device_train_batch_size 2 \
-    --gradient_accumulation_steps 8 \
+    --gradient_accumulation_steps 4 \
     --max_pixels $((360 * 420)) \
     --fps 1.0 \
-    --learning_rate 1e-5 \
+    --learning_rate 1e-4 \
     --merger_lr 1e-5 \
     --vision_lr 2e-6 \
     --weight_decay 0.1 \
@@ -44,10 +44,11 @@ deepspeed src/training/train.py \
     --logging_steps 1 \
     --tf32 True \
     --gradient_checkpointing True \
-    --report_to tensorboard \
+    --report_to wandb \
+    --run_name Qwen2-VL-7B-finetune \
     --lazy_preprocess True \
     --save_strategy "steps" \
-    --save_steps 200 \
+    --hub_model_id "agopalkr/Qwen2-VL-7B-Instruct" \
     --save_total_limit 1 \
     --dataloader_num_workers 4 \
     --push_to_hub True

@@ -8,6 +8,7 @@ import ujson as json
 from torch.utils.data import Dataset
 from qwen_vl_utils import process_vision_info
 from PIL import Image
+import pdb
 
 from .params import DataArguments
 from .constants import *
@@ -262,6 +263,7 @@ class DataCollatorForSupervisedDataset(object):
                 grid_key = "video_grid_thw"
                 pixel_key = "pixel_values_videos"
                 batch_pixel_values.append(example[pixel_key])
+                batch_image_thw.append(example[grid_key])
             elif "pixel_values" in keys:
                 grid_key = "image_grid_thw"
                 pixel_key = "pixel_values"
@@ -270,7 +272,7 @@ class DataCollatorForSupervisedDataset(object):
             batch_input_ids.append(example["input_ids"])
             batch_label_ids.append(example["labels"])
             batch_dummy_flags.append(example["is_dummy"])
-        
+                
         input_ids = pad_sequence(
             batch_input_ids, padding_side=self.padding_side, padding_value=self.pad_token_id
         )
@@ -286,11 +288,16 @@ class DataCollatorForSupervisedDataset(object):
         }
 
         if len(batch_pixel_values) > 0:
+
+            # Only get first video 
+            batch_pixel_values = [x[0] for x in batch_pixel_values]
+            batch_image_thw = [x[0] for x in batch_image_thw]
             pixel_values = torch.cat(batch_pixel_values, dim=0)
             image_thw = torch.cat(batch_image_thw, dim=0)
             data_dict[pixel_key] = pixel_values
             data_dict[grid_key] = image_thw
 
+        
         return data_dict
     
 
